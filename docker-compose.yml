@@ -1,0 +1,45 @@
+version: "3"
+services: 
+  dagit:
+    build: 
+      context: ./
+      dockerfile: dagster.Dockerfile
+    environment:
+      - "DAGSTER_HOME=/app"
+    volumes: 
+      - .:/app
+    ports:
+      - 3000:3000
+    entrypoint: ["dagit", "-h", "0.0.0.0"]
+    environment:
+      DAGSTER_HOME: "/dagster"
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    depends_on:
+      - postgresql
+      - dagster_daemon
+  dagster_daemon:
+    build: 
+      context: ./
+      dockerfile: dagster.Dockerfile
+    environment:
+      DAGSTER_HOME: "/dagster"
+      DAGSTER_POSTGRES_USER: "postgres_user"
+      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
+      DAGSTER_POSTGRES_DB: "postgres_db"
+    volumes: 
+      - .:/app
+    entrypoint: ["dagster-daemon", "run"]
+    depends_on:
+      - postgresql
+  # This service runs the postgres DB used by dagster for run storage, schedule storage,
+  # and event log storage.
+  postgresql:
+    image: postgres:11
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres_user"
+      POSTGRES_PASSWORD: "postgres_password"
+      POSTGRES_DB: "postgres_db"
